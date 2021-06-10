@@ -1,4 +1,6 @@
-# LSTM-based-Modeling and explaination of RT out of EEG
+LSTM-based-Modeling and explaination of RT out of EEG
+# Deep Brain Behavior Mapping and Interrogation (DBBMI) Framework, Case study: RT prediction from Pre-stimulus EEG in Elderlies
+
 
 Source code for Deep and milti-level regression analysis in "A Deep Method for Prediction and Modeling of Behavioral Measurement from an Arbitrary Period of EEG" paper
 
