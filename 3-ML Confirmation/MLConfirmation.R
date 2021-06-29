@@ -45,3 +45,14 @@ ggplot(graphdat, aes(x=Method, y=ACC, fill=Subspace)) +
         facet_wrap(~RES)
         
         
+testDat = graphdat[graphdat$Subspace %in% c("AllperCh","LSTM","LSTM_Reg","AllChPCA")
+                   & graphdat$RES==3 & graphdat$Method == "RF",]        
+
+testDat$Subspace = factor(testDat$Subspace, levels = c("AllperCh","AllChPCA","LSTM","LSTM_Reg"),
+                          labels = c("AllPerCh_Feats","PCA_Feats","LSTM_Feats","LSTM_LMM_Feats"))
+ggplot(testDat, aes(x=Subspace, y=ACC, fill=Subspace)) + 
+    geom_bar(stat="summary",fun="mean",position="dodge")+
+    stat_summary(fun.data = "mean_se", geom="errorbar",position="dodge")+
+    labs(x="Feature Subspace",y="3-level RT Classification Accuracy", size=16)
+
+graph2ppt(file="Fig4.pptx",width = 9, height = 5)

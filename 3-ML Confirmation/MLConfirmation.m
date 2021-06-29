@@ -64,8 +64,8 @@ Method = [];
 Subspace = [];
 channelNum = 27;
 
-for RTRes = 2:10
-discretizedRT = round(normalizedFeats.RT*RTRes);
+for RTRes = 3:3 %2:4
+discretizedRT = floor(normalizedFeats.RT*(RTRes-1e-5));
 Feats = table2array(normalizedFeats(:,7:end));
 %% Main loop single channels
 
@@ -92,7 +92,7 @@ close(f)
 
 %% Main loop PCA ALL channels
 
-ACCs_PCA = zeros(runs,2,channelNum);
+ACCs_PCA = zeros(runs,2);
 
 f = waitbar(0,'PCA ALL Channel Evaluation');
 for runIdx = 1:runs
@@ -115,7 +115,42 @@ for runIdx = 1:runs
     testY   = discretizedRT(testIdx & chIdxTemp);
     
     [trainX,testX] = PCA_pick(trainX,testX,.80);
-    ACCs_PCA(runIdx,:,chIdx) = ML_testtrain(trainX,trainY,testX,testY);
+%     trainX = trainX(:,[216,464]);
+%     testX  = testX(:,[216,464]);
+    ACCs_PCA(runIdx,:) = ML_testtrain(trainX,trainY,testX,testY);
+end
+close(f)
+
+%% Main loop lasso ALL channels
+
+ACCs_Lasso = zeros(runs,2);
+
+f = waitbar(0,'Lasso ALL Channel Evaluation');
+for runIdx = 1:runs
+    waitbar(runIdx/runs,f,sprintf('Lasso ALL Channel Run = %d',runIdx));
+    testIdx = false(size(Feats,1),1);
+    for sIDx = 1:length(uniqueSIDs)
+        testIdx = testIdx | (SIDs==uniqueSIDs(sIDx) & trials==testOutIDs(runIdx,sIDx));
+    end
+    trainIdx = ~testIdx;
+    
+    
+    trainX = [];
+    testX = [];
+    for chIdx = 1:channelNum
+        chIdxTemp = channels==chIdx;
+        trainX = cat(2,trainX,Feats(trainIdx & chIdxTemp, :));
+        testX = cat(2,testX,Feats(testIdx & chIdxTemp, :));
+    end
+    trainY  = discretizedRT(trainIdx & chIdxTemp);
+    testY   = discretizedRT(testIdx & chIdxTemp);
+    
+    [B,FitInfo] = lasso(trainX,trainY,'CV',10,'Alpha',.75);
+    idxLambdaMinMSE = FitInfo.IndexMinMSE;
+    BestFeats = (B(:,idxLambdaMinMSE)~=0);
+    trainX = trainX(:,BestFeats);
+    testX = testX(:,BestFeats);
+    ACCs_Lasso(runIdx,:) = ML_testtrain(trainX,trainY,testX,testY);
 end
 close(f)
 
@@ -263,14 +298,28 @@ title("RTRes = "+num2str(RTRes))
 [~,P_KNN_C(itt)] = ttest(squeeze(mean(ACCs(:,1,:),3)),ACCs_LSTM_Reg(:,1));
 [~,P_RF_C(itt)] = ttest(squeeze(mean(ACCs(:,2,:),3)),ACCs_LSTM_Reg(:,2));
 
-temp = squeeze(mean(ACCs_PCA(:,1,:),3));
+temp = ACCs_Lasso(:,1);
+ACC = cat(1,ACC,temp);
+RUN = cat(1,RUN,(1:length(temp))');
+RES = cat(1,RES,repmat(RTRes,length(temp),1));
+Method = cat(1,Method,repmat("KNN",length(temp),1));
+Subspace = cat(1,Subspace,repmat("AllChLasso",length(temp),1));
+
+temp = ACCs_Lasso(:,2);
+ACC = cat(1,ACC,temp);
+RUN = cat(1,RUN,(1:length(temp))');
+RES = cat(1,RES,repmat(RTRes,length(temp),1));
+Method = cat(1,Method,repmat("RF",length(temp),1));
+Subspace = cat(1,Subspace,repmat("AllChLasso",length(temp),1));
+
+temp = ACCs_PCA(:,1);
 ACC = cat(1,ACC,temp);
 RUN = cat(1,RUN,(1:length(temp))');
 RES = cat(1,RES,repmat(RTRes,length(temp),1));
 Method = cat(1,Method,repmat("KNN",length(temp),1));
 Subspace = cat(1,Subspace,repmat("AllChPCA",length(temp),1));
 
-temp = squeeze(mean(ACCs_PCA(:,2,:),3));
+temp = ACCs_PCA(:,2);
 ACC = cat(1,ACC,temp);
 RUN = cat(1,RUN,(1:length(temp))');
 RES = cat(1,RES,repmat(RTRes,length(temp),1));

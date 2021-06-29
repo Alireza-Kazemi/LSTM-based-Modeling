@@ -22,8 +22,10 @@ Accuracy_KNN = sum(diag(cm))/sum(sum(cm))*100;
 
 cm = confusionmat(testY,Labs_RF);
 Accuracy_RF = sum(diag(cm))/sum(sum(cm))*100;
+% plotconfusion(categorical(testY),categorical(Labs_RF));
 
 ACC = [Accuracy_KNN ,Accuracy_RF];
+
 % ACC= [0,0];
 end
 
