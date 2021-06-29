@@ -1,6 +1,6 @@
 function eeg = PreprocessingFilter(eeg,fs)
 
-fcL = 55;
+fcL = 45;
 fcH = .5;
 
 lpFilt = designfilt('lowpassfir','PassbandFrequency',fcL, ...
